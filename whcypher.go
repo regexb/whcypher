@@ -8,11 +8,11 @@ import (
 
 type Node struct {
 	Children [26]*Node
-	KnownLoc [][3]int // int[[page, row, col], [page, row, col]]
+	KnownLoc [][4]int // int[[page, row, col, len], [page, row, col, len]]
 }
 
-func (n *Node) AddLoc(page, row, col int) {
-	n.KnownLoc = append(n.KnownLoc, [3]int{page, row, col})
+func (n *Node) AddLoc(page, row, colStart, depth int) {
+	n.KnownLoc = append(n.KnownLoc, [4]int{page, row, colStart, depth})
 }
 
 func NewNode(char string) *Node {
@@ -48,7 +48,7 @@ func (t *Trie) InsertPagePart(page, rowNum, colStart int, letters []string) erro
 
 		// then add loc
 		if current != t.RootNode {
-			current.AddLoc(page, rowNum, colStart+i)
+			current.AddLoc(page, rowNum, colStart, i+1)
 		}
 	}
 	return nil
@@ -56,7 +56,7 @@ func (t *Trie) InsertPagePart(page, rowNum, colStart int, letters []string) erro
 
 // SearchLetters returns the index of the term found up until and all the known locations.
 // If the whole term was found, the index will be len(term)
-func (t *Trie) SearchLetters(term string) (int, [][3]int) {
+func (t *Trie) SearchLetters(term string) (int, [][4]int) {
 	current := t.RootNode
 	strippedTerm := strings.ToLower(term)
 	for i := 0; i < len(strippedTerm); i++ {
@@ -89,8 +89,7 @@ func (t *Trie) ConstructPhraseLTR(phrase string) ([][4]int, error) {
 			return nil, fmt.Errorf("Letter %s not found", string(remaining[index]))
 		}
 		ri := rand.Intn(len(locations))
-		loc := [4]int{locations[ri][0], locations[ri][1], locations[ri][2] - index + 1, index}
-		phraseLocations = append(phraseLocations, loc)
+		phraseLocations = append(phraseLocations, locations[ri])
 		remaining = remaining[index:]
 	}
 
@@ -113,10 +112,9 @@ func (t *Trie) findAllLongest(phrase string) (res [][4]int, err error) {
 	}
 
 	ri := rand.Intn(len(lloc))
-	lpart := [4]int{lloc[ri][0], lloc[ri][1], lloc[ri][2] - ls + 1, ls}
 
 	if len(phrase) == ls {
-		return append(res, lpart), nil
+		return append(res, lloc[ri]), nil
 	}
 
 	pre := phrase[0:li]
@@ -132,7 +130,7 @@ func (t *Trie) findAllLongest(phrase string) (res [][4]int, err error) {
 	}
 
 	// Main
-	res = append(res, lpart)
+	res = append(res, lloc[ri])
 
 	// Postfix remaining
 	if len(post) > 0 {
@@ -146,7 +144,7 @@ func (t *Trie) findAllLongest(phrase string) (res [][4]int, err error) {
 	return
 }
 
-func (t *Trie) FindLongest(phrase string) (longestIndex int, longestSize int, longestLoc [][3]int) {
+func (t *Trie) FindLongest(phrase string) (longestIndex int, longestSize int, longestLoc [][4]int) {
 	for i := 0; i < len(phrase); i++ {
 		check := phrase[i:]
 		s, loc := t.SearchLetters(check)
