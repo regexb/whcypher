@@ -6,35 +6,33 @@ import (
 	"log"
 	"log/slog"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/regexb/whcypher"
 	"github.com/urfave/cli/v2"
 )
 
-func loadSource(file string) ([][][]string, error) {
+func loadSource(file string) ([][]string, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
 
-	var out [][][]string
+	var out [][]string
 	groups := bytes.Split(data, []byte("\n\n"))
 	for _, g := range groups {
-		var sub [][]string
+		var sub []string
 		lines := bytes.Split(g, []byte("\n"))
 		for _, l := range lines {
-			sub = append(sub, strings.Split(string(l), ""))
+			sub = append(sub, string(l))
 		}
 		out = append(out, sub)
 	}
 	return out, nil
 }
 
-func cypherTreeFromSource(source [][][]string) (*whcypher.Trie, error) {
-	root := whcypher.NewNode("\000")
-	trie := &whcypher.Trie{RootNode: root}
+func cypherTreeFromSource(source [][]string) (*whcypher.Trie, error) {
+	trie := whcypher.NewTrie()
 
 	for pi, page := range source {
 		for ri, row := range page {

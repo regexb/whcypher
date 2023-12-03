@@ -15,7 +15,7 @@ func (n *Node) AddLoc(page, row, colStart, depth int) {
 	n.KnownLoc = append(n.KnownLoc, [4]int{page, row, colStart, depth})
 }
 
-func NewNode(char string) *Node {
+func NewNode() *Node {
 	return &Node{}
 }
 
@@ -23,7 +23,13 @@ type Trie struct {
 	RootNode *Node
 }
 
-func (t *Trie) InsertPageRow(page, rowNum int, letters []string) error {
+func NewTrie() *Trie {
+	return &Trie{
+		RootNode: NewNode(),
+	}
+}
+
+func (t *Trie) InsertPageRow(page, rowNum int, letters string) error {
 	for i := range letters {
 		next := letters[i:]
 		if err := t.InsertPagePart(page, rowNum, i, next); err != nil {
@@ -33,16 +39,15 @@ func (t *Trie) InsertPageRow(page, rowNum int, letters []string) error {
 	return nil
 }
 
-func (t *Trie) InsertPagePart(page, rowNum, colStart int, letters []string) error {
+func (t *Trie) InsertPagePart(page, rowNum, colStart int, letters string) error {
 	current := t.RootNode
-	for i, l := range letters {
-		l := strings.ToLower(string(l[0])) // ensure only 1 character
-		index := l[0] - 'a'                // 99 - lower ascii table decimal number
+	for i, l := range strings.ToLower(letters) {
+		index := l - 'a' // 99 - lower ascii table decimal number
 		if index < 0 || index > 25 {
 			return fmt.Errorf("invalid characters in source: %q", l)
 		}
 		if current.Children[index] == nil {
-			current.Children[index] = NewNode(string(l))
+			current.Children[index] = NewNode()
 		}
 		current = current.Children[index]
 
