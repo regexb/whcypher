@@ -7,7 +7,6 @@ import (
 )
 
 type Node struct {
-	Char     string
 	Children [26]*Node
 	KnownLoc [][3]int // int[[page, row, col], [page, row, col]]
 }
@@ -17,11 +16,7 @@ func (n *Node) AddLoc(page, row, col int) {
 }
 
 func NewNode(char string) *Node {
-	n := &Node{Char: char}
-	for i := 0; i < 26; i++ {
-		n.Children[i] = nil
-	}
-	return n
+	return &Node{}
 }
 
 type Trie struct {
@@ -29,7 +24,6 @@ type Trie struct {
 }
 
 func (t *Trie) InsertPageRow(page, rowNum int, letters []string) error {
-	// Add up to 3 letters for each starting letter
 	for i := range letters {
 		next := letters[i:]
 		if err := t.InsertPagePart(page, rowNum, i, next); err != nil {
