@@ -79,6 +79,9 @@ func (t *Trie) SearchLetters(term string) (int, [][4]int) {
 // ConstructPhraseLTR uses a left to right search to find the longest runs of
 // letters it can until the phrase is complete.
 func (t *Trie) ConstructPhraseLTR(phrase string) ([][4]int, error) {
+	if len(phrase) == 0 {
+		return nil, fmt.Errorf("invalid phrase %q", phrase)
+	}
 
 	phraseLocations := [][4]int{}
 
@@ -91,7 +94,7 @@ func (t *Trie) ConstructPhraseLTR(phrase string) ([][4]int, error) {
 		index, locations := t.SearchLetters(remaining)
 
 		if index < 1 || len(locations) < 1 {
-			return nil, fmt.Errorf("Letter %s not found", string(remaining[index]))
+			return nil, fmt.Errorf("letter %s not found", string(remaining[index]))
 		}
 		ri := rand.Intn(len(locations))
 		phraseLocations = append(phraseLocations, locations[ri])
