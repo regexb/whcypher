@@ -20,12 +20,26 @@ func NewNode() *Node {
 }
 
 type Trie struct {
-	RootNode *Node
+	RootNode  *Node
+	locSelect func(int) int
 }
 
 func NewTrie() *Trie {
 	return &Trie{
 		RootNode: NewNode(),
+		locSelect: func(n int) int {
+			return 0
+		},
+	}
+}
+
+func (t *Trie) SetLocSelect(f func(int) int) {
+	t.locSelect = f
+}
+
+func (t *Trie) WithRandomLocSelect() {
+	t.locSelect = func(n int) int {
+		return rand.Intn(n)
 	}
 }
 
@@ -96,7 +110,7 @@ func (t *Trie) ConstructPhraseLTR(phrase string) ([][4]int, error) {
 		if index < 1 || len(locations) < 1 {
 			return nil, fmt.Errorf("letter %s not found", string(remaining[index]))
 		}
-		ri := rand.Intn(len(locations))
+		ri := min(t.locSelect(len(locations)), len(locations)-1)
 		phraseLocations = append(phraseLocations, locations[ri])
 		remaining = remaining[index:]
 	}
@@ -119,8 +133,7 @@ func (t *Trie) findAllLongest(phrase string) (res [][4]int, err error) {
 		return nil, fmt.Errorf("unable to complete phrase %q", phrase)
 	}
 
-	ri := rand.Intn(len(lloc))
-
+	ri := min(t.locSelect(len(lloc)), len(lloc)-1)
 	if len(phrase) == ls {
 		return append(res, lloc[ri]), nil
 	}
