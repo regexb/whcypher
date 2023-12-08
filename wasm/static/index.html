@@ -1,6 +1,7 @@
 <html>
 <head>
     <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="wasm_exec.js"></script>
     <script>
         const go = new Go();
@@ -12,20 +13,65 @@
         html {
             font-family: Arial, serif;
         }
+        ul {
+            padding: 0;
+        }
+        li {
+            display: inline-block;
+        }
+        #inputField {
+            width: 100%;
+            font-size: 30px;
+            border: none;
+            border-bottom: 4px solid #aaa;
+            padding: 10px 5px;
+        }
+        #output {
+            font-size: 30px;
+        }
     </style>
 </head>
 <body>
 <div>
-    <label for="inputField">Enter value</label>
-    <input id="inputField" name="Hash" type="text">
-    <div id="outputHash" style="font-size: 20px"></div>
+    <label for="inputField" placeholder="Enter a message">Enter message:</label>
+    <div>
+        <input id="inputField" name="message" type="text">
+    </div>
+
+    <ul>
+        <li><input type="checkbox" id="opt_right" name="opt_right" value="0" checked /> <label for="right">Right</label></li>
+        <li><input type="checkbox" id="opt_left" name="opt_left" value="1" /> <label for="right">Left</label></li>
+        <li><input type="checkbox" id="opt_up" name="opt_up" value="2" /> <label for="right">Up</label></li>
+        <li><input type="checkbox" id="opt_down" name="opt_down" value="3" /> <label for="right">Down</label></li>
+        <li><input type="checkbox" id="opt_diagonal" name="opt_diagonal" value="4" /> <label for="right">Diagonal</label></li>
+    </ul>
+    <div id="output"></div>
 </div>
 <script>
-    var inputField = document.querySelector('#inputField')
-    var outputHash = document.querySelector('#outputHash')
+    var inputField = document.querySelector('#inputField');
+    var output = document.querySelector('#output');
     inputField.addEventListener('keyup', function () {
-        outputHash.innerHTML = generateCypher(inputField.value) // The function 'wasmHash' is defined in the Go code
+        if (inputField.value.length === 0) {
+            output.innerHTML = '...';
+            return;
+        }
+        output.innerHTML = generateCypher(inputField.value); // function 'generateCypher' is defined in the main.wasm
     });
+
+    var optCheckboxes = document.querySelectorAll('input[type=checkbox]');
+    for (var i = 0; i < optCheckboxes.length; i++) {
+        optCheckboxes[i].addEventListener('change', function () {
+            var opts = 0;
+            opts += document.getElementById('opt_right').checked ? 1 << parseInt(document.getElementById("opt_right").value) : 0;
+            opts += document.getElementById('opt_left').checked ? 1 << parseInt(document.getElementById("opt_left").value) : 0;
+            opts += document.getElementById('opt_up').checked ? 1 << parseInt(document.getElementById("opt_up").value) : 0;
+            opts += document.getElementById('opt_down').checked ? 1 << parseInt(document.getElementById("opt_down").value) : 0;
+            opts += document.getElementById('opt_diagonal').checked ? 1 << parseInt(document.getElementById("opt_diagonal").value) : 0;
+            reload(opts); // reload data with new options
+            output.innerHTML = generateCypher(inputField.value); // function 'generateCypher' is defined in the main.wasm
+        });
+    }
+
 </script>
 </body>
 </html>
