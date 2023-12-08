@@ -12,32 +12,72 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func loadSource(file string) ([][]string, error) {
+func loadSource(file string) ([][][]byte, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
 
-	var out [][]string
+	var out [][][]byte
 	groups := bytes.Split(data, []byte("\n\n"))
 	for _, g := range groups {
-		var sub []string
-		lines := bytes.Split(g, []byte("\n"))
-		for _, l := range lines {
-			sub = append(sub, string(l))
-		}
-		out = append(out, sub)
+		out = append(out, bytes.Split(g, []byte("\n")))
 	}
 	return out, nil
 }
 
-func cypherTreeFromSource(source [][]string) (*whcypher.Trie, error) {
+func cypherTreeFromSource(ctx *cli.Context, source [][][]byte) (*whcypher.Trie, error) {
 	trie := whcypher.NewTrie()
-
+	trie.SetLocSelect(func(len int) int {
+		return len - 1
+	})
 	for pi, page := range source {
 		for ri, row := range page {
-			if err := trie.InsertPageRow(pi, ri, row); err != nil {
-				return nil, err
+			for bi := range row {
+				// traverse right
+				if ctx.Bool("right") || ctx.Bool("allDirection") {
+					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, 0, 1))); err != nil {
+						return nil, err
+					}
+				}
+
+				// traverse left
+				if ctx.Bool("left") || ctx.Bool("allDirection") {
+					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, 0, -1))); err != nil {
+						return nil, err
+					}
+				}
+
+				// traverse up
+				if ctx.Bool("up") || ctx.Bool("allDirection") {
+					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 0))); err != nil {
+						return nil, err
+					}
+				}
+
+				// traverse down
+				if ctx.Bool("down") || ctx.Bool("allDirection") {
+					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 0))); err != nil {
+						return nil, err
+					}
+				}
+
+				// traverse diagonally
+				if ctx.Bool("allDirection") {
+					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 1))); err != nil {
+						return nil, err
+					}
+					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, 1, -1))); err != nil {
+						return nil, err
+					}
+					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 1))); err != nil {
+						return nil, err
+					}
+					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, -1, -1))); err != nil {
+						return nil, err
+					}
+				}
+
 			}
 		}
 	}
@@ -45,16 +85,36 @@ func cypherTreeFromSource(source [][]string) (*whcypher.Trie, error) {
 	return trie, nil
 }
 
+// rowFromSource returns the string of characters walking in the x and y direction
+func rowFromSource(source [][]byte, startX, startY, moveX, moveY int) []byte {
+	row := make([]byte, 0)
+	x, y := startX, startY
+
+	for x >= 0 && x < len(source) && y >= 0 && y < len(source[x]) {
+		row = append(row, source[x][y])
+		x += moveX
+		y += moveY
+	}
+
+	return row
+}
+
 func main() {
 	app := &cli.App{
-		Name: "whcli",
+		Name:                   "whcli",
+		UseShortOptionHandling: true,
 		Flags: []cli.Flag{
-			&cli.PathFlag{Name: "file", Aliases: []string{"f"}},
+			&cli.PathFlag{Name: "file", Aliases: []string{"f"}, Required: true},
 			&cli.StringFlag{Name: "input", Aliases: []string{"in", "i"}},
-			&cli.IntFlag{Name: "page_offset", Aliases: []string{"p"}, Value: 1},
-			&cli.IntFlag{Name: "row_offset", Aliases: []string{"r"}, Value: 1},
-			&cli.IntFlag{Name: "col_offset", Aliases: []string{"c"}, Value: 1},
+			&cli.IntFlag{Name: "page_offset", Aliases: []string{"po"}, Value: 1},
+			&cli.IntFlag{Name: "row_offset", Aliases: []string{"ro"}, Value: 1},
+			&cli.IntFlag{Name: "col_offset", Aliases: []string{"co"}, Value: 1},
 			&cli.BoolFlag{Name: "ltr", Value: false},
+			&cli.BoolFlag{Name: "right", Aliases: []string{"r"}, Value: true},
+			&cli.BoolFlag{Name: "left", Aliases: []string{"l"}, Value: false},
+			&cli.BoolFlag{Name: "up", Aliases: []string{"u"}, Value: false},
+			&cli.BoolFlag{Name: "down", Aliases: []string{"d"}, Value: false},
+			&cli.BoolFlag{Name: "allDirection", Aliases: []string{"all"}, Value: false},
 		},
 		Action: func(ctx *cli.Context) error {
 			slog.Info("Starting...")
@@ -70,7 +130,7 @@ func main() {
 
 			slog.Info("Loading source into trie")
 			start = time.Now()
-			cypher, err := cypherTreeFromSource(source)
+			cypher, err := cypherTreeFromSource(ctx, source)
 			if err != nil {
 				slog.Error("Failed to load source into cypher trie", "time", time.Since(start))
 				return err
