@@ -6,17 +6,77 @@ import (
 	"strings"
 )
 
-type Node struct {
-	Children [26]*Node
-	KnownLoc [][4]int // int[[page, row, col, len], [page, row, col, len]]
+type Direction int
+
+const (
+	DirectionRight Direction = 1 << iota // 1
+	DirectionLeft  Direction = 1 << iota // 2
+	DirectionUp    Direction = 1 << iota // 4
+	DirectionDown  Direction = 1 << iota // 8
+	DirectionDiag  Direction = 1 << iota // 16
+)
+
+var directionNames map[Direction]string = map[Direction]string{
+	DirectionRight: "right",
+	DirectionLeft:  "left",
+	DirectionUp:    "up",
+	DirectionDown:  "down",
+	DirectionDiag:  "diagonal",
 }
 
-func (n *Node) AddLoc(page, row, colStart, depth int) {
-	n.KnownLoc = append(n.KnownLoc, [4]int{page, row, colStart, depth})
+func (d Direction) Directions() []Direction {
+	dirs := []Direction{}
+	if d&DirectionRight > 0 {
+		dirs = append(dirs, DirectionRight)
+	}
+	if d&DirectionLeft > 0 {
+		dirs = append(dirs, DirectionLeft)
+	}
+	if d&DirectionUp > 0 {
+		dirs = append(dirs, DirectionUp)
+	}
+	if d&DirectionDown > 0 {
+		dirs = append(dirs, DirectionDown)
+	}
+	if d&DirectionDiag > 0 {
+		dirs = append(dirs, DirectionDiag)
+	}
+	return dirs
+}
+
+func (d Direction) String() string {
+	dirs := []string{}
+	for _, n := range d.Directions() {
+		if direction, ok := directionNames[n]; ok {
+			dirs = append(dirs, direction)
+		}
+	}
+	return strings.Join(dirs, "|")
+}
+
+type Node struct {
+	Children      [26]*Node
+	LocDirections Direction              // 00001 = right, 00010 = left, 00100 = up, 01000 = down, 10000 = diag
+	KnownLoc      map[Direction][][4]int // [Direction]int[[page, row, col, len], [page, row, col, len]]
+}
+
+func (n *Node) KnownLocationsForDirections(dir Direction) [][4]int {
+	directions := dir.Directions()
+	locs := [][4]int{}
+	for _, d := range directions {
+		locs = append(locs, n.KnownLoc[d]...)
+	}
+	return locs
+}
+
+func (n *Node) AddLoc(dir Direction, page, row, colStart, depth int) {
+	n.KnownLoc[dir] = append(n.KnownLoc[dir], [4]int{page, row, colStart, depth})
 }
 
 func NewNode() *Node {
-	return &Node{}
+	return &Node{
+		KnownLoc: make(map[Direction][][4]int),
+	}
 }
 
 type Trie struct {
@@ -43,17 +103,17 @@ func (t *Trie) WithRandomLocSelect() {
 	}
 }
 
-func (t *Trie) InsertPageRow(page, rowNum int, letters string) error {
+func (t *Trie) InsertPageRow(dir Direction, page, rowNum int, letters string) error {
 	for i := range letters {
 		next := letters[i:]
-		if err := t.InsertPagePart(page, rowNum, i, next); err != nil {
+		if err := t.InsertPagePart(dir, page, rowNum, i, next); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (t *Trie) InsertPagePart(page, rowNum, colStart int, letters string) error {
+func (t *Trie) InsertPagePart(dir Direction, page, rowNum, colStart int, letters string) error {
 	current := t.RootNode
 	for i, l := range strings.ToLower(letters) {
 		index := l - 'a' // 99 - lower ascii table decimal number
@@ -67,7 +127,8 @@ func (t *Trie) InsertPagePart(page, rowNum, colStart int, letters string) error 
 
 		// then add loc
 		if current != t.RootNode {
-			current.AddLoc(page, rowNum, colStart, i+1)
+			current.LocDirections |= dir
+			current.AddLoc(dir, page, rowNum, colStart, i+1)
 		}
 	}
 	return nil
@@ -75,7 +136,7 @@ func (t *Trie) InsertPagePart(page, rowNum, colStart int, letters string) error 
 
 // SearchLetters returns the index of the term found up until and all the known locations.
 // If the whole term was found, the index will be len(term)
-func (t *Trie) SearchLetters(term string) (int, [][4]int) {
+func (t *Trie) SearchLetters(term string, direction Direction) (int, [][4]int) {
 	current := t.RootNode
 	strippedTerm := strings.ToLower(term)
 	for i := 0; i < len(strippedTerm); i++ {
@@ -83,16 +144,21 @@ func (t *Trie) SearchLetters(term string) (int, [][4]int) {
 
 		// next letter not found
 		if current == nil || current.Children[index] == nil {
-			return i, current.KnownLoc
+			return i, current.KnownLocationsForDirections(direction)
+		}
+
+		// next letter in wrong direction
+		if current.Children[index].LocDirections&direction == 0 {
+			return i, current.KnownLocationsForDirections(direction)
 		}
 		current = current.Children[index]
 	}
-	return len(strippedTerm), current.KnownLoc
+	return len(strippedTerm), current.KnownLocationsForDirections(direction)
 }
 
 // ConstructPhraseLTR uses a left to right search to find the longest runs of
 // letters it can until the phrase is complete.
-func (t *Trie) ConstructPhraseLTR(phrase string) ([][4]int, error) {
+func (t *Trie) ConstructPhraseLTR(phrase string, dir Direction) ([][4]int, error) {
 	if len(phrase) == 0 {
 		return nil, fmt.Errorf("invalid phrase %q", phrase)
 	}
@@ -105,7 +171,7 @@ func (t *Trie) ConstructPhraseLTR(phrase string) ([][4]int, error) {
 	// Use search until the phrase is complete.
 	remaining := strippedPhrase[0:]
 	for len(remaining) > 0 {
-		index, locations := t.SearchLetters(remaining)
+		index, locations := t.SearchLetters(remaining, dir)
 
 		if index < 1 || len(locations) < 1 {
 			return nil, fmt.Errorf("letter %s not found", string(remaining[index]))
@@ -118,17 +184,17 @@ func (t *Trie) ConstructPhraseLTR(phrase string) ([][4]int, error) {
 	return phraseLocations, nil
 }
 
-func (t *Trie) ConstructPhraseLongest(phrase string) ([][4]int, error) {
+func (t *Trie) ConstructPhraseLongest(phrase string, dir Direction) ([][4]int, error) {
 	strippedPhrase := strings.ToLower(strings.ReplaceAll(phrase, " ", ""))
-	return t.findAllLongest(strippedPhrase)
+	return t.findAllLongest(strippedPhrase, dir)
 }
 
-func (t *Trie) findAllLongest(phrase string) (res [][4]int, err error) {
+func (t *Trie) findAllLongest(phrase string, dir Direction) (res [][4]int, err error) {
 	if len(phrase) == 0 {
 		return nil, fmt.Errorf("invalid phrase %q", phrase)
 	}
 
-	li, ls, lloc := t.FindLongest(phrase)
+	li, ls, lloc := t.FindLongest(phrase, dir)
 	if len(lloc) == 0 {
 		return nil, fmt.Errorf("unable to complete phrase %q", phrase)
 	}
@@ -143,7 +209,7 @@ func (t *Trie) findAllLongest(phrase string) (res [][4]int, err error) {
 
 	// Prefix remaining
 	if len(pre) > 0 {
-		prer, prerr := t.findAllLongest(pre)
+		prer, prerr := t.findAllLongest(pre, dir)
 		if prerr != nil {
 			return nil, prerr
 		}
@@ -155,7 +221,7 @@ func (t *Trie) findAllLongest(phrase string) (res [][4]int, err error) {
 
 	// Postfix remaining
 	if len(post) > 0 {
-		posr, poerr := t.findAllLongest(post)
+		posr, poerr := t.findAllLongest(post, dir)
 		if poerr != nil {
 			return nil, poerr
 		}
@@ -165,10 +231,10 @@ func (t *Trie) findAllLongest(phrase string) (res [][4]int, err error) {
 	return
 }
 
-func (t *Trie) FindLongest(phrase string) (longestIndex int, longestSize int, longestLoc [][4]int) {
+func (t *Trie) FindLongest(phrase string, dir Direction) (longestIndex int, longestSize int, longestLoc [][4]int) {
 	for i := 0; i < len(phrase); i++ {
 		check := phrase[i:]
-		s, loc := t.SearchLetters(check)
+		s, loc := t.SearchLetters(check, dir)
 		if s > longestSize {
 			longestIndex = i
 			longestLoc = loc
