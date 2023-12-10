@@ -26,58 +26,44 @@ func loadSource(file string) ([][][]byte, error) {
 	return out, nil
 }
 
-func cypherTreeFromSource(ctx *cli.Context, source [][][]byte) (*whcypher.Trie, error) {
+func cypherTreeFromSource(source [][][]byte) (*whcypher.Trie, error) {
 	trie := whcypher.NewTrie()
-	trie.SetLocSelect(func(len int) int {
-		return len - 1
-	})
 	for pi, page := range source {
 		for ri, row := range page {
 			for bi := range row {
 				// traverse right
-				if ctx.Bool("right") || ctx.Bool("allDirection") {
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, 0, 1))); err != nil {
-						return nil, err
-					}
+				if err := trie.InsertPagePart(whcypher.DirectionRight, pi, ri, bi, string(rowFromSource(page, ri, bi, 0, 1))); err != nil {
+					return nil, err
 				}
 
 				// traverse left
-				if ctx.Bool("left") || ctx.Bool("allDirection") {
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, 0, -1))); err != nil {
-						return nil, err
-					}
+				if err := trie.InsertPagePart(whcypher.DirectionLeft, pi, ri, bi, string(rowFromSource(page, ri, bi, 0, -1))); err != nil {
+					return nil, err
 				}
 
 				// traverse up
-				if ctx.Bool("up") || ctx.Bool("allDirection") {
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 0))); err != nil {
-						return nil, err
-					}
+				if err := trie.InsertPagePart(whcypher.DirectionUp, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 0))); err != nil {
+					return nil, err
 				}
 
 				// traverse down
-				if ctx.Bool("down") || ctx.Bool("allDirection") {
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 0))); err != nil {
-						return nil, err
-					}
+				if err := trie.InsertPagePart(whcypher.DirectionDown, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 0))); err != nil {
+					return nil, err
 				}
 
 				// traverse diagonally
-				if ctx.Bool("allDirection") {
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 1))); err != nil {
-						return nil, err
-					}
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, 1, -1))); err != nil {
-						return nil, err
-					}
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 1))); err != nil {
-						return nil, err
-					}
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, -1, -1))); err != nil {
-						return nil, err
-					}
+				if err := trie.InsertPagePart(whcypher.DirectionDiag, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 1))); err != nil {
+					return nil, err
 				}
-
+				if err := trie.InsertPagePart(whcypher.DirectionDiag, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, -1))); err != nil {
+					return nil, err
+				}
+				if err := trie.InsertPagePart(whcypher.DirectionDiag, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 1))); err != nil {
+					return nil, err
+				}
+				if err := trie.InsertPagePart(whcypher.DirectionDiag, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, -1))); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
@@ -130,20 +116,38 @@ func main() {
 
 			slog.Info("Loading source into trie")
 			start = time.Now()
-			cypher, err := cypherTreeFromSource(ctx, source)
+			cypher, err := cypherTreeFromSource(source)
 			if err != nil {
 				slog.Error("Failed to load source into cypher trie", "time", time.Since(start))
 				return err
 			}
 			slog.Info("Finished loading source into cypher trie", "time", time.Since(start))
 
+			dir := whcypher.Direction(0)
+
+			if ctx.Bool("right") {
+				dir |= whcypher.DirectionRight
+			}
+			if ctx.Bool("left") {
+				dir |= whcypher.DirectionLeft
+			}
+			if ctx.Bool("up") {
+				dir |= whcypher.DirectionUp
+			}
+			if ctx.Bool("down") {
+				dir |= whcypher.DirectionDown
+			}
+			if ctx.Bool("allDirection") {
+				dir = whcypher.DirectionDiag | whcypher.DirectionRight | whcypher.DirectionLeft | whcypher.DirectionUp | whcypher.DirectionDown
+			}
+
 			in := ctx.String("input")
 			start = time.Now()
 			var out [][4]int
 			if ctx.Bool("ltr") {
-				out, err = cypher.ConstructPhraseLTR(in)
+				out, err = cypher.ConstructPhraseLTR(in, dir)
 			} else {
-				out, err = cypher.ConstructPhraseLongest(in)
+				out, err = cypher.ConstructPhraseLongest(in, dir)
 			}
 			if err != nil {
 				slog.Info("Failed to generate cypher", "phrase", in, "time", time.Since(start))

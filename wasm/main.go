@@ -46,48 +46,34 @@ func rowFromSource(source [][]byte, startX, startY, moveX, moveY int) []byte {
 	return row
 }
 
-func cypherTreeFromSource(source [][][]byte, opts int) *whcypher.Trie {
+func cypherTreeFromSource(source [][][]byte) *whcypher.Trie {
 	trie := whcypher.NewTrie()
 	for pi, page := range source {
 		for ri, row := range page {
 			for bi := range row {
-				if opts&FlagRight != 0 {
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, 0, 1))); err != nil {
-						panic(err)
-					}
+				if err := trie.InsertPagePart(whcypher.DirectionRight, pi, ri, bi, string(rowFromSource(page, ri, bi, 0, 1))); err != nil {
+					panic(err)
 				}
-
-				if opts&FlagLeft != 0 {
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, 0, -1))); err != nil {
-						panic(err)
-					}
+				if err := trie.InsertPagePart(whcypher.DirectionLeft, pi, ri, bi, string(rowFromSource(page, ri, bi, 0, -1))); err != nil {
+					panic(err)
 				}
-
-				if opts&FlagUp != 0 {
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 0))); err != nil {
-						panic(err)
-					}
+				if err := trie.InsertPagePart(whcypher.DirectionUp, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 0))); err != nil {
+					panic(err)
 				}
-
-				if opts&FlagDown != 0 {
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 0))); err != nil {
-						panic(err)
-					}
+				if err := trie.InsertPagePart(whcypher.DirectionDown, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 0))); err != nil {
+					panic(err)
 				}
-
-				if opts&FlagDiagonal != 0 {
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 1))); err != nil {
-						panic(err)
-					}
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, 1, -1))); err != nil {
-						panic(err)
-					}
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 1))); err != nil {
-						panic(err)
-					}
-					if err := trie.InsertPagePart(pi, ri, bi, string(rowFromSource(page, ri, bi, -1, -1))); err != nil {
-						panic(err)
-					}
+				if err := trie.InsertPagePart(whcypher.DirectionDiag, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 1))); err != nil {
+					panic(err)
+				}
+				if err := trie.InsertPagePart(whcypher.DirectionDiag, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, -1))); err != nil {
+					panic(err)
+				}
+				if err := trie.InsertPagePart(whcypher.DirectionDiag, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 1))); err != nil {
+					panic(err)
+				}
+				if err := trie.InsertPagePart(whcypher.DirectionDiag, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, -1))); err != nil {
+					panic(err)
 				}
 			}
 		}
@@ -107,25 +93,17 @@ func (c *cypherTree) hash(this js.Value, args []js.Value) any {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-const (
-	FlagRight    = 1 << iota // 1
-	FlagLeft     = 1 << iota // 2
-	FlagUp       = 1 << iota // 4
-	FlagDown     = 1 << iota // 8
-	FlagDiagonal = 1 << iota // 16
-)
-
 func (c *cypherTree) generate(this js.Value, args []js.Value) any {
-	if len(args) != 1 {
+	if len(args) != 2 {
 		panic("bad args")
 	}
 
 	// Remove non-alpha characters
 	in := nonAlphaRegex.ReplaceAllString(args[0].String(), "")
 
-	fmt.Printf("Query: %q\n", in)
+	fmt.Printf("Query: %q w/ options (%s)\n", in, whcypher.Direction(args[1].Int()))
 
-	rawCode, err := c.trie.ConstructPhraseLTR(in)
+	rawCode, err := c.trie.ConstructPhraseLTR(in, whcypher.Direction(args[1].Int()))
 	if err != nil {
 		return "error"
 	}
@@ -147,15 +125,6 @@ func (c *cypherTree) generate(this js.Value, args []js.Value) any {
 	return out.String()
 }
 
-func (c *cypherTree) reloadTrie(this js.Value, args []js.Value) any {
-	if len(args) != 1 {
-		panic("bad args")
-	}
-	fmt.Printf("reloading trie with: %08b\n", args[0].Int())
-	c.trie = cypherTreeFromSource(c.source, args[0].Int())
-	return nil
-}
-
 func main() {
 
 	// Read the file
@@ -163,12 +132,11 @@ func main() {
 	fmt.Printf("loaded %d pages\n", len(source))
 
 	cypherGenerator := &cypherTree{
-		trie:   cypherTreeFromSource(source, FlagRight),
+		trie:   cypherTreeFromSource(source),
 		source: source,
 	}
 
 	js.Global().Set("generateCypher", js.FuncOf(cypherGenerator.generate))
-	js.Global().Set("reload", js.FuncOf(cypherGenerator.reloadTrie))
 
 	select {}
 }

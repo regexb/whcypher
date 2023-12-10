@@ -50,28 +50,36 @@
 <script>
     var inputField = document.querySelector('#inputField');
     var output = document.querySelector('#output');
-    inputField.addEventListener('keyup', function () {
-        if (inputField.value.length === 0) {
+
+    var optRight = document.getElementById('opt_right');
+    var optLeft = document.getElementById('opt_left');
+    var optUp = document.getElementById('opt_up');
+    var optDown = document.getElementById('opt_down');
+    var optDiagonal = document.getElementById('opt_diagonal');
+
+    function setOutput() {
+        var opts = 0;
+        opts += optRight.checked ? 1 << parseInt(optRight.value) : 0;
+        opts += optLeft.checked ? 1 << parseInt(optLeft.value) : 0;
+        opts += optUp.checked ? 1 << parseInt(optUp.value) : 0;
+        opts += optDown.checked ? 1 << parseInt(optDown.value) : 0;
+        opts += optDiagonal.checked ? 1 << parseInt(optDiagonal.value) : 0;
+
+        if (inputField.value.length === 0 || opts === 0) {
             output.innerHTML = '...';
             return;
         }
-        output.innerHTML = generateCypher(inputField.value); // function 'generateCypher' is defined in the main.wasm
-    });
 
-    var optCheckboxes = document.querySelectorAll('input[type=checkbox]');
-    for (var i = 0; i < optCheckboxes.length; i++) {
-        optCheckboxes[i].addEventListener('change', function () {
-            var opts = 0;
-            opts += document.getElementById('opt_right').checked ? 1 << parseInt(document.getElementById("opt_right").value) : 0;
-            opts += document.getElementById('opt_left').checked ? 1 << parseInt(document.getElementById("opt_left").value) : 0;
-            opts += document.getElementById('opt_up').checked ? 1 << parseInt(document.getElementById("opt_up").value) : 0;
-            opts += document.getElementById('opt_down').checked ? 1 << parseInt(document.getElementById("opt_down").value) : 0;
-            opts += document.getElementById('opt_diagonal').checked ? 1 << parseInt(document.getElementById("opt_diagonal").value) : 0;
-            reload(opts); // reload data with new options
-            output.innerHTML = generateCypher(inputField.value); // function 'generateCypher' is defined in the main.wasm
-        });
+        output.innerHTML = generateCypher(inputField.value, opts); // function 'generateCypher' is defined in the main.wasm
     }
 
+    // Set listeners for re-generating cypher
+    inputField.addEventListener('keyup', setOutput);
+    optRight.addEventListener('change', setOutput);
+    optLeft.addEventListener('change', setOutput);
+    optUp.addEventListener('change', setOutput);
+    optDown.addEventListener('change', setOutput);
+    optDiagonal.addEventListener('change', setOutput);
 </script>
 </body>
 </html>

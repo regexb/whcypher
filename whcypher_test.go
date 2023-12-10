@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestNode_AddLoc(t *testing.T) {
 	node := NewNode()
-	node.AddLoc(1, 2, 3, 4)
+	node.AddLoc(DirectionRight, 1, 2, 3, 4)
 	if len(node.KnownLoc) != 1 {
 		t.Errorf("Expected 1, got %d", len(node.KnownLoc))
 	}
@@ -31,7 +32,7 @@ func TestNewTrie(t *testing.T) {
 
 func TestTrie_InsertPageRow(t *testing.T) {
 	trie := NewTrie()
-	err := trie.InsertPageRow(0, 0, "abc")
+	err := trie.InsertPageRow(DirectionRight, 0, 0, "abc")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -39,7 +40,7 @@ func TestTrie_InsertPageRow(t *testing.T) {
 
 func TestTrie_InsertPageRow_WithNumbers(t *testing.T) {
 	trie := NewTrie()
-	err := trie.InsertPageRow(0, 0, "abc123")
+	err := trie.InsertPageRow(DirectionRight, 0, 0, "abc123")
 	if err == nil {
 		t.Errorf("Expected invalid character error, got %v", err)
 	}
@@ -47,7 +48,7 @@ func TestTrie_InsertPageRow_WithNumbers(t *testing.T) {
 
 func TestTrie_InsertPagePart(t *testing.T) {
 	trie := NewTrie()
-	err := trie.InsertPagePart(0, 0, 0, "abc")
+	err := trie.InsertPagePart(DirectionRight, 0, 0, 0, "abc")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -109,16 +110,16 @@ func TestTrie_SearchLetters(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			trie := NewTrie()
 			for i, row := range tc.pageRows {
-				trie.InsertPageRow(0, i, row)
+				trie.InsertPageRow(DirectionRight, 0, i, row)
 			}
-			index, knownLocations := trie.SearchLetters(tc.searchLetters)
+			index, knownLocations := trie.SearchLetters(tc.searchLetters, DirectionRight)
 			if index != tc.expectedFoundLen {
 				t.Errorf("Expected length found %d, got %d", tc.expectedFoundLen, index)
 			}
 			if len(knownLocations) != tc.expectedNumMatches {
 				t.Errorf("Expected number of matches %d, got %d", tc.expectedNumMatches, len(knownLocations))
 			}
-			if diff := cmp.Diff(knownLocations, tc.expectedLocations); diff != "" {
+			if diff := cmp.Diff(knownLocations, tc.expectedLocations, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("Expected knownLocations to match, got diff %s", diff)
 			}
 		})
@@ -196,13 +197,13 @@ func TestTrie_ConstructPhraseLTR(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			trie := NewTrie()
 			for i, row := range tc.pageRows {
-				trie.InsertPageRow(0, i, row)
+				trie.InsertPageRow(DirectionRight, 0, i, row)
 			}
-			result, err := trie.ConstructPhraseLTR(tc.searchWord)
+			result, err := trie.ConstructPhraseLTR(tc.searchWord, DirectionRight)
 			if err == nil && tc.expectedErr != nil {
 				t.Errorf("Expected error %v, got %v", tc.expectedErr, err)
 			}
-			if diff := cmp.Diff(result, tc.expected); diff != "" {
+			if diff := cmp.Diff(result, tc.expected, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("Expected result to match, got diff (-got,+want) %s", diff)
 			}
 		})
@@ -273,9 +274,9 @@ func TestTrie_ConstructPhraseLongest(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			trie := NewTrie()
 			for i, row := range tc.pageRows {
-				trie.InsertPageRow(0, i, row)
+				trie.InsertPageRow(DirectionRight, 0, i, row)
 			}
-			result, err := trie.ConstructPhraseLongest(tc.searchWord)
+			result, err := trie.ConstructPhraseLongest(tc.searchWord, DirectionRight)
 			if err == nil && tc.expectedErr != nil {
 				t.Errorf("Expected error %v, got %v", tc.expectedErr, err)
 			}
