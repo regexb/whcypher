@@ -143,7 +143,7 @@ func main() {
 
 			in := ctx.String("input")
 			start = time.Now()
-			var out [][4]int
+			var out [][5]int
 			if ctx.Bool("ltr") {
 				out, err = cypher.ConstructPhraseLTR(in, dir)
 			} else {
