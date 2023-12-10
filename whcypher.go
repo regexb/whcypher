@@ -60,11 +60,13 @@ type Node struct {
 	KnownLoc      map[Direction][][4]int // [Direction]int[[page, row, col, len], [page, row, col, len]]
 }
 
-func (n *Node) KnownLocationsForDirections(dir Direction) [][4]int {
+func (n *Node) KnownLocationsForDirections(dir Direction) [][5]int {
 	directions := dir.Directions()
-	locs := [][4]int{}
+	locs := [][5]int{}
 	for _, d := range directions {
-		locs = append(locs, n.KnownLoc[d]...)
+		for _, l := range n.KnownLoc[d] {
+			locs = append(locs, [5]int{l[0], l[1], l[2], l[3], int(d)})
+		}
 	}
 	return locs
 }
@@ -136,7 +138,7 @@ func (t *Trie) InsertPagePart(dir Direction, page, rowNum, colStart int, letters
 
 // SearchLetters returns the index of the term found up until and all the known locations.
 // If the whole term was found, the index will be len(term)
-func (t *Trie) SearchLetters(term string, direction Direction) (int, [][4]int) {
+func (t *Trie) SearchLetters(term string, direction Direction) (int, [][5]int) {
 	current := t.RootNode
 	strippedTerm := strings.ToLower(term)
 	for i := 0; i < len(strippedTerm); i++ {
@@ -158,12 +160,12 @@ func (t *Trie) SearchLetters(term string, direction Direction) (int, [][4]int) {
 
 // ConstructPhraseLTR uses a left to right search to find the longest runs of
 // letters it can until the phrase is complete.
-func (t *Trie) ConstructPhraseLTR(phrase string, dir Direction) ([][4]int, error) {
+func (t *Trie) ConstructPhraseLTR(phrase string, dir Direction) ([][5]int, error) {
 	if len(phrase) == 0 {
 		return nil, fmt.Errorf("invalid phrase %q", phrase)
 	}
 
-	phraseLocations := [][4]int{}
+	phraseLocations := [][5]int{}
 
 	// Strip down phrase for searching.
 	strippedPhrase := strings.ToLower(strings.ReplaceAll(phrase, " ", ""))
@@ -184,12 +186,12 @@ func (t *Trie) ConstructPhraseLTR(phrase string, dir Direction) ([][4]int, error
 	return phraseLocations, nil
 }
 
-func (t *Trie) ConstructPhraseLongest(phrase string, dir Direction) ([][4]int, error) {
+func (t *Trie) ConstructPhraseLongest(phrase string, dir Direction) ([][5]int, error) {
 	strippedPhrase := strings.ToLower(strings.ReplaceAll(phrase, " ", ""))
 	return t.findAllLongest(strippedPhrase, dir)
 }
 
-func (t *Trie) findAllLongest(phrase string, dir Direction) (res [][4]int, err error) {
+func (t *Trie) findAllLongest(phrase string, dir Direction) (res [][5]int, err error) {
 	if len(phrase) == 0 {
 		return nil, fmt.Errorf("invalid phrase %q", phrase)
 	}
@@ -231,7 +233,7 @@ func (t *Trie) findAllLongest(phrase string, dir Direction) (res [][4]int, err e
 	return
 }
 
-func (t *Trie) FindLongest(phrase string, dir Direction) (longestIndex int, longestSize int, longestLoc [][4]int) {
+func (t *Trie) FindLongest(phrase string, dir Direction) (longestIndex int, longestSize int, longestLoc [][5]int) {
 	for i := 0; i < len(phrase); i++ {
 		check := phrase[i:]
 		s, loc := t.SearchLetters(check, dir)

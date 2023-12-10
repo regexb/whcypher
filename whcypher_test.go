@@ -62,7 +62,7 @@ func TestTrie_SearchLetters(t *testing.T) {
 		searchLetters      string
 		expectedFoundLen   int
 		expectedNumMatches int
-		expectedLocations  [][4]int
+		expectedLocations  [][5]int
 	}{
 		{
 			description:        "Test case 1",
@@ -70,7 +70,7 @@ func TestTrie_SearchLetters(t *testing.T) {
 			searchLetters:      "abc",
 			expectedFoundLen:   3,
 			expectedNumMatches: 1,
-			expectedLocations:  [][4]int{{0, 0, 0, 3}},
+			expectedLocations:  [][5]int{{0, 0, 0, 3, 1}},
 		},
 		{
 			description:        "Empty search",
@@ -94,7 +94,7 @@ func TestTrie_SearchLetters(t *testing.T) {
 			searchLetters:      "hi",
 			expectedFoundLen:   2,
 			expectedNumMatches: 1,
-			expectedLocations:  [][4]int{{0, 2, 1, 2}},
+			expectedLocations:  [][5]int{{0, 2, 1, 2, 1}},
 		},
 		{
 			description:        "Partial match",
@@ -102,7 +102,7 @@ func TestTrie_SearchLetters(t *testing.T) {
 			searchLetters:      "hello",
 			expectedFoundLen:   3,
 			expectedNumMatches: 1,
-			expectedLocations:  [][4]int{{0, 3, 0, 3}},
+			expectedLocations:  [][5]int{{0, 3, 0, 3, 1}},
 		},
 	}
 
@@ -132,14 +132,14 @@ func TestTrie_ConstructPhraseLTR(t *testing.T) {
 		description string
 		pageRows    []string
 		searchWord  string
-		expected    [][4]int
+		expected    [][5]int
 		expectedErr error
 	}{
 		{
 			description: "Test case 1",
 			pageRows:    []string{"abc"},
 			searchWord:  "abc",
-			expected:    [][4]int{{0, 0, 0, 3}},
+			expected:    [][5]int{{0, 0, 0, 3, 1}},
 			expectedErr: nil,
 		},
 		{
@@ -160,35 +160,35 @@ func TestTrie_ConstructPhraseLTR(t *testing.T) {
 			description: "Multi part match",
 			pageRows:    []string{"abcdefg"},
 			searchWord:  "bab",
-			expected:    [][4]int{{0, 0, 1, 1}, {0, 0, 0, 2}},
+			expected:    [][5]int{{0, 0, 1, 1, 1}, {0, 0, 0, 2, 1}},
 			expectedErr: nil,
 		},
 		{
 			description: "Multi row match",
 			pageRows:    []string{"fghooo", "ooabco", "oodeoo"},
 			searchWord:  "abcdefgh",
-			expected:    [][4]int{{0, 1, 2, 3}, {0, 2, 2, 2}, {0, 0, 0, 3}},
+			expected:    [][5]int{{0, 1, 2, 3, 1}, {0, 2, 2, 2, 1}, {0, 0, 0, 3, 1}},
 			expectedErr: nil,
 		},
 		{
 			description: "Longest at front",
 			pageRows:    []string{"abcdea", "aaabca", "aabcda"},
 			searchWord:  "abcde",
-			expected:    [][4]int{{0, 0, 0, 5}},
+			expected:    [][5]int{{0, 0, 0, 5, 1}},
 			expectedErr: nil,
 		},
 		{
 			description: "Longest in middle",
 			pageRows:    []string{"bcdefa", "ooooog", "obcode"},
 			searchWord:  "abcdefg",
-			expected:    [][4]int{{0, 0, 5, 1}, {0, 0, 0, 5}, {0, 1, 5, 1}},
+			expected:    [][5]int{{0, 0, 5, 1, 1}, {0, 0, 0, 5, 1}, {0, 1, 5, 1, 1}},
 			expectedErr: nil,
 		},
 		{
 			description: "Longest in middle with shorter ltr match",
 			pageRows:    []string{"bcdefa", "abooog", "obcode"},
 			searchWord:  "abcdefg",
-			expected:    [][4]int{{0, 1, 0, 2}, {0, 0, 1, 4}, {0, 1, 5, 1}},
+			expected:    [][5]int{{0, 1, 0, 2, 1}, {0, 0, 1, 4, 1}, {0, 1, 5, 1, 1}},
 			expectedErr: nil,
 		},
 	}
@@ -216,14 +216,14 @@ func TestTrie_ConstructPhraseLongest(t *testing.T) {
 		description string
 		pageRows    []string
 		searchWord  string
-		expected    [][4]int
+		expected    [][5]int
 		expectedErr error
 	}{
 		{
 			description: "Test case 1",
 			pageRows:    []string{"abc"},
 			searchWord:  "abc",
-			expected:    [][4]int{{0, 0, 0, 3}},
+			expected:    [][5]int{{0, 0, 0, 3, 1}},
 			expectedErr: nil,
 		},
 		{
@@ -244,28 +244,28 @@ func TestTrie_ConstructPhraseLongest(t *testing.T) {
 			description: "Multi part match",
 			pageRows:    []string{"abcdefg"},
 			searchWord:  "bab",
-			expected:    [][4]int{{0, 0, 1, 1}, {0, 0, 0, 2}},
+			expected:    [][5]int{{0, 0, 1, 1, 1}, {0, 0, 0, 2, 1}},
 			expectedErr: nil,
 		},
 		{
 			description: "Multi row match",
 			pageRows:    []string{"fghooo", "ooabco", "oodeoo"},
 			searchWord:  "abcdefgh",
-			expected:    [][4]int{{0, 1, 2, 3}, {0, 2, 2, 2}, {0, 0, 0, 3}},
+			expected:    [][5]int{{0, 1, 2, 3, 1}, {0, 2, 2, 2, 1}, {0, 0, 0, 3, 1}},
 			expectedErr: nil,
 		},
 		{
 			description: "Longest at front",
 			pageRows:    []string{"abcdea", "aaabca", "aabcda"},
 			searchWord:  "abcde",
-			expected:    [][4]int{{0, 0, 0, 5}},
+			expected:    [][5]int{{0, 0, 0, 5, 1}},
 			expectedErr: nil,
 		},
 		{
 			description: "Longest in middle",
 			pageRows:    []string{"bcdefa", "ooooog", "obcode"},
 			searchWord:  "abcdefg",
-			expected:    [][4]int{{0, 0, 5, 1}, {0, 0, 0, 5}, {0, 1, 5, 1}},
+			expected:    [][5]int{{0, 0, 5, 1, 1}, {0, 0, 0, 5, 1}, {0, 1, 5, 1, 1}},
 			expectedErr: nil,
 		},
 	}

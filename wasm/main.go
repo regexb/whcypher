@@ -114,7 +114,7 @@ func (c *cypherTree) generate(this js.Value, args []js.Value) any {
 
 	out := &strings.Builder{}
 	for i, part := range rawCode {
-		fmt.Fprintf(out, "%d %d %d %d", part[0]+3, part[1]+1, part[2]+1, part[3])
+		fmt.Fprintf(out, "[%d %d %d %d (%s)]", part[0]+3, part[1]+1, part[2]+1, part[3], dirMap[whcypher.Direction(part[4])])
 		if i == len(rawCode)-1 {
 			fmt.Fprintln(out)
 		} else {
@@ -123,6 +123,14 @@ func (c *cypherTree) generate(this js.Value, args []js.Value) any {
 	}
 
 	return out.String()
+}
+
+var dirMap = map[whcypher.Direction]string{
+	whcypher.DirectionRight: "→",
+	whcypher.DirectionLeft:  "←",
+	whcypher.DirectionUp:    "↑",
+	whcypher.DirectionDown:  "↓",
+	whcypher.DirectionDiag:  "↘",
 }
 
 func main() {
