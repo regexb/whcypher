@@ -68,9 +68,11 @@
     <div>
         <label for="algo">Search Algorithm:</label>
         <input name="algo" type="radio" id="ltr" value="ltr" checked>
+        <span id="ltr_count"></span>
         <label for="ltr">LTR (left-to-right)</label>
         <input name="algo" type="radio" id="longest" value="longest">
-        <label for="longest">Longest Run</label>
+        <span id="longest_count"></span>
+        <label for="longest">Longest</label>
     </div>
 
     <div class="out-wrapper">
@@ -91,7 +93,9 @@
     var optDiagonal = document.getElementById('opt_diagonal');
 
     var ltr = document.getElementById('ltr');
+    var ltrCount = document.getElementById('ltr_count');
     var longest = document.getElementById('longest');
+    var longestCount = document.getElementById('longest_count');
 
     function copy() {
         // Select the text field
@@ -115,13 +119,28 @@
         if (inputField.value.length === 0 || opts === 0) {
             output.innerHTML = '...';
             debugOut.innerHTML = '';
+            ltrCount.innerHTML = '';
+            longestCount.innerHTML = '';
             return;
         }
 
-        out = generateCypher(inputField.value, opts, document.querySelector('input[name="algo"]:checked').value); // function 'generateCypher' is defined in the main.wasm
+        outLTR = generateCypher(inputField.value, opts, "ltr"); // function 'generateCypher' is defined in the main.wasm
+        outLongest = generateCypher(inputField.value, opts, "longest"); // function 'generateCypher' is defined in the main.wasm
 
-        output.innerHTML = out.replaceAll(/([^\d\s])/g, '').split(" ").filter(function(a){return a !== ""}).join(" ");
-        debugOut.innerHTML = out;
+        console.log("ltr: ", outLTR);
+        console.log("longest: ", outLongest);
+
+        // update counts
+        ltrCount.innerHTML = "(" + outLTR.locations.length + ")&nbsp;";
+        longestCount.innerHTML = "(" + outLongest.locations.length + ")&nbsp;";
+
+        if (longest.checked) {
+            output.innerHTML = outLongest.output;
+            debugOut.innerHTML = outLongest.debugOutput;
+        } else {
+            output.innerHTML = outLTR.output;
+            debugOut.innerHTML = outLTR.debugOutput;
+        }
     }
 
     // Set listeners for re-generating cypher

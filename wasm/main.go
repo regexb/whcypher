@@ -125,20 +125,49 @@ func (c *cypherTree) generate(this js.Value, args []js.Value) any {
 		return "not found"
 	}
 
+	return js.ValueOf(map[string]interface{}{
+		"output":      rawToCode(rawCode),
+		"debugOutput": rawToDebugString(rawCode),
+		"locations":   rawToJSMap(rawCode),
+	})
+}
+
+func rawToCode(rawCode [][5]int) string {
+	out := []string{}
+	for _, part := range rawCode {
+		out = append(out, fmt.Sprintf("%d %d %d %d", part[0]+3, part[1]+1, part[2]+1, part[3]))
+	}
+	return strings.Join(out, " ")
+}
+
+func rawToDebugString(rawCode [][5]int) string {
 	out := &strings.Builder{}
 	for i, part := range rawCode {
-		fmt.Fprintf(out, "[%d %d %d %d (%s)]", part[0]+3, part[1]+1, part[2]+1, part[3], dirMap[whcypher.Direction(part[4])])
+		fmt.Fprintf(out, "[%d %d %d %d (%s)]", part[0]+3, part[1]+1, part[2]+1, part[3], dirDebugMap[whcypher.Direction(part[4])])
 		if i == len(rawCode)-1 {
 			fmt.Fprintln(out)
 		} else {
 			fmt.Fprint(out, " ")
 		}
 	}
-
 	return out.String()
 }
 
-var dirMap = map[whcypher.Direction]string{
+func rawToJSMap(rawCode [][5]int) []any {
+	out := []any{}
+	for _, part := range rawCode {
+		out = append(out, map[string]any{
+			"page": part[0] + 3,
+			"row":  part[1] + 1,
+			"col":  part[2] + 1,
+			"len":  part[3],
+			"dir":  whcypher.Direction(part[4]).String(),
+		})
+	}
+	return out
+}
+
+var dirDebugMap = map[whcypher.Direction]string{
 	whcypher.DirectionRight:     "➡️",
 	whcypher.DirectionLeft:      "⬅️",
 	whcypher.DirectionUp:        "⬆️",
