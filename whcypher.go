@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-type Direction int
+type Direction byte
 
 const (
 	DirectionRight     Direction = 1 << iota // 1
