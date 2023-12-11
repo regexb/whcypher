@@ -94,18 +94,31 @@ func (c *cypherTree) hash(this js.Value, args []js.Value) any {
 }
 
 func (c *cypherTree) generate(this js.Value, args []js.Value) any {
-	if len(args) != 2 {
+	if len(args) != 3 {
 		panic("bad args")
 	}
 
 	// Remove non-alpha characters
 	in := nonAlphaRegex.ReplaceAllString(args[0].String(), "")
 
-	fmt.Printf("Query: %q w/ options (%s)\n", in, whcypher.Direction(args[1].Int()))
+	algo := args[2].String()
+	direction := whcypher.Direction(args[1].Int())
 
-	rawCode, err := c.trie.ConstructPhraseLTR(in, whcypher.Direction(args[1].Int()))
-	if err != nil {
-		return "error"
+	fmt.Printf("Query: %q w/ algo (%s) and options (%s)\n", in, algo, direction)
+
+	var rawCode [][5]int
+	if algo == "longest" {
+		var err error
+		rawCode, err = c.trie.ConstructPhraseLongest(in, direction)
+		if err != nil {
+			return "error"
+		}
+	} else {
+		var err error
+		rawCode, err = c.trie.ConstructPhraseLTR(in, direction)
+		if err != nil {
+			return "error"
+		}
 	}
 
 	if len(rawCode) == 0 {

@@ -56,6 +56,13 @@
         <li><input type="checkbox" id="opt_down" name="opt_down" value="3" /> <label for="right">Down</label></li>
         <li><input type="checkbox" id="opt_diagonal" name="opt_diagonal" value="4" /> <label for="right">Diagonal</label></li>
     </ul>
+
+    <div>
+        <input name="algo" type="radio" id="ltr" value="ltr" checked>
+        <label for="ltr">LTR</label>
+        <input name="algo" type="radio" id="longest" value="longest">
+        <label for="longest">LONGEST</label>
+    </div>
     <div id="output">...</div>
     <button onClick="copy()" title="copy code">📋</button>
     <div id="debugOut"></div>
@@ -70,6 +77,9 @@
     var optUp = document.getElementById('opt_up');
     var optDown = document.getElementById('opt_down');
     var optDiagonal = document.getElementById('opt_diagonal');
+
+    var ltr = document.getElementById('ltr');
+    var longest = document.getElementById('longest');
 
     function copy() {
         // Select the text field
@@ -96,7 +106,7 @@
             return;
         }
 
-        out = generateCypher(inputField.value, opts); // function 'generateCypher' is defined in the main.wasm
+        out = generateCypher(inputField.value, opts, document.querySelector('input[name="algo"]:checked').value); // function 'generateCypher' is defined in the main.wasm
 
         output.innerHTML = out.replaceAll(/([^\d\s])/g, '').split(" ").filter(function(a){return a !== ""}).join(" ");
         debugOut.innerHTML = out;
@@ -109,6 +119,8 @@
     optUp.addEventListener('change', setOutput);
     optDown.addEventListener('change', setOutput);
     optDiagonal.addEventListener('change', setOutput);
+    ltr.addEventListener('change', setOutput);
+    longest.addEventListener('change', setOutput);
 </script>
 </body>
 </html>
