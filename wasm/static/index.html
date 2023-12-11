@@ -28,6 +28,17 @@
         }
         #output {
             font-size: 30px;
+            -webkit-touch-callout: all; /* iOS Safari */
+            -webkit-user-select: all; /* Safari */
+            -khtml-user-select: all; /* Konqueror HTML */
+            -moz-user-select: all; /* Firefox */
+            -ms-user-select: all; /* Internet Explorer/Edge */
+            user-select: all; /* Chrome and Opera */
+        }
+        button {
+            font-size: 30px;
+            padding: 10px;
+            margin: 10px 0;
         }
     </style>
 </head>
@@ -45,7 +56,8 @@
         <li><input type="checkbox" id="opt_down" name="opt_down" value="3" /> <label for="right">Down</label></li>
         <li><input type="checkbox" id="opt_diagonal" name="opt_diagonal" value="4" /> <label for="right">Diagonal</label></li>
     </ul>
-    <div id="output"></div>
+    <div id="output">...</div>
+    <button onClick="copy()" title="copy code">📋</button>
     <div id="debugOut"></div>
 </div>
 <script>
@@ -59,6 +71,17 @@
     var optDown = document.getElementById('opt_down');
     var optDiagonal = document.getElementById('opt_diagonal');
 
+    function copy() {
+        // Select the text field
+        let range = document.createRange();
+        range.selectNode(output.firstChild);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+
+        // Copy the text inside the text field
+        navigator.clipboard.writeText(output.textContent);
+    }
+
     function setOutput() {
         var opts = 0;
         opts += optRight.checked ? 1 << parseInt(optRight.value) : 0;
@@ -69,12 +92,13 @@
 
         if (inputField.value.length === 0 || opts === 0) {
             output.innerHTML = '...';
+            debugOut.innerHTML = '';
             return;
         }
 
         out = generateCypher(inputField.value, opts); // function 'generateCypher' is defined in the main.wasm
 
-        output.innerHTML = out.replace(/[^\d\s]/g, '');
+        output.innerHTML = out.replaceAll(/([^\d\s])/g, '').split(" ").filter(function(a){return a !== ""}).join(" ");
         debugOut.innerHTML = out;
     }
 
