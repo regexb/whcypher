@@ -52,16 +52,16 @@ func cypherTreeFromSource(source [][][]byte) (*whcypher.Trie, error) {
 				}
 
 				// traverse diagonally
-				if err := trie.InsertPagePart(whcypher.DirectionDiag, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 1))); err != nil {
+				if err := trie.InsertPagePart(whcypher.DirectionRightDown, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 1))); err != nil {
 					return nil, err
 				}
-				if err := trie.InsertPagePart(whcypher.DirectionDiag, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, -1))); err != nil {
+				if err := trie.InsertPagePart(whcypher.DirectionLeftDown, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, -1))); err != nil {
 					return nil, err
 				}
-				if err := trie.InsertPagePart(whcypher.DirectionDiag, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 1))); err != nil {
+				if err := trie.InsertPagePart(whcypher.DirectionRightUp, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 1))); err != nil {
 					return nil, err
 				}
-				if err := trie.InsertPagePart(whcypher.DirectionDiag, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, -1))); err != nil {
+				if err := trie.InsertPagePart(whcypher.DirectionLeftUp, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, -1))); err != nil {
 					return nil, err
 				}
 			}

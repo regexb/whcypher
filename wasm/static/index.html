@@ -65,7 +65,7 @@
         opts += optLeft.checked ? 1 << parseInt(optLeft.value) : 0;
         opts += optUp.checked ? 1 << parseInt(optUp.value) : 0;
         opts += optDown.checked ? 1 << parseInt(optDown.value) : 0;
-        opts += optDiagonal.checked ? 1 << parseInt(optDiagonal.value) : 0;
+        opts += optDiagonal.checked ? 240 : 0; // 240 = 11110000 to set all diagonal bits
 
         if (inputField.value.length === 0 || opts === 0) {
             output.innerHTML = '...';

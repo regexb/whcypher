@@ -9,37 +9,48 @@ import (
 type Direction int
 
 const (
-	DirectionRight Direction = 1 << iota // 1
-	DirectionLeft  Direction = 1 << iota // 2
-	DirectionUp    Direction = 1 << iota // 4
-	DirectionDown  Direction = 1 << iota // 8
-	DirectionDiag  Direction = 1 << iota // 16
+	DirectionRight     Direction = 1 << iota // 1
+	DirectionLeft      Direction = 1 << iota // 2
+	DirectionUp        Direction = 1 << iota // 4
+	DirectionDown      Direction = 1 << iota // 8
+	DirectionRightUp   Direction = 1 << iota // 16
+	DirectionLeftUp    Direction = 1 << iota // 32
+	DirectionRightDown Direction = 1 << iota // 64
+	DirectionLeftDown  Direction = 1 << iota // 128
+)
+
+const (
+	DirectionDiag = DirectionRightUp | DirectionLeftUp | DirectionRightDown | DirectionLeftDown
 )
 
 var directionNames map[Direction]string = map[Direction]string{
-	DirectionRight: "right",
-	DirectionLeft:  "left",
-	DirectionUp:    "up",
-	DirectionDown:  "down",
-	DirectionDiag:  "diagonal",
+	DirectionRight:     "right",
+	DirectionLeft:      "left",
+	DirectionUp:        "up",
+	DirectionDown:      "down",
+	DirectionRightUp:   "right-up",
+	DirectionLeftUp:    "left-up",
+	DirectionRightDown: "right-down",
+	DirectionLeftDown:  "left-down",
 }
 
 func (d Direction) Directions() []Direction {
+	priorityDirs := []Direction{
+		DirectionRight,
+		DirectionDown,
+		DirectionLeft,
+		DirectionUp,
+		DirectionRightDown,
+		DirectionRightUp,
+		DirectionLeftDown,
+		DirectionLeftUp,
+	}
+
 	dirs := []Direction{}
-	if d&DirectionRight > 0 {
-		dirs = append(dirs, DirectionRight)
-	}
-	if d&DirectionLeft > 0 {
-		dirs = append(dirs, DirectionLeft)
-	}
-	if d&DirectionUp > 0 {
-		dirs = append(dirs, DirectionUp)
-	}
-	if d&DirectionDown > 0 {
-		dirs = append(dirs, DirectionDown)
-	}
-	if d&DirectionDiag > 0 {
-		dirs = append(dirs, DirectionDiag)
+	for _, dir := range priorityDirs {
+		if d&dir > 0 {
+			dirs = append(dirs, dir)
+		}
 	}
 	return dirs
 }
