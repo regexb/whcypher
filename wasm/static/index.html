@@ -26,6 +26,9 @@
             border-bottom: 4px solid #aaa;
             padding: 10px 5px;
         }
+        .out-wrapper {
+            padding: 20px 0 0 0;
+        }
         #output {
             font-size: 30px;
             -webkit-touch-callout: all; /* iOS Safari */
@@ -34,11 +37,16 @@
             -moz-user-select: all; /* Firefox */
             -ms-user-select: all; /* Internet Explorer/Edge */
             user-select: all; /* Chrome and Opera */
+            display: inline;
         }
         button {
             font-size: 30px;
-            padding: 10px;
-            margin: 10px 0;
+            padding: 5px;
+            margin: 5px;
+        }
+        #debugOut {
+            font-size: 14px;
+            color: #444;
         }
     </style>
 </head>
@@ -50,21 +58,25 @@
     </div>
 
     <ul>
-        <li><input type="checkbox" id="opt_right" name="opt_right" value="0" checked /> <label for="right">Right</label></li>
-        <li><input type="checkbox" id="opt_left" name="opt_left" value="1" /> <label for="right">Left</label></li>
-        <li><input type="checkbox" id="opt_up" name="opt_up" value="2" /> <label for="right">Up</label></li>
-        <li><input type="checkbox" id="opt_down" name="opt_down" value="3" /> <label for="right">Down</label></li>
-        <li><input type="checkbox" id="opt_diagonal" name="opt_diagonal" value="4" /> <label for="right">Diagonal</label></li>
+        <li><input type="checkbox" id="opt_right" name="opt_right" value="0" checked /> <label for="opt_right">Right</label></li>
+        <li><input type="checkbox" id="opt_left" name="opt_left" value="1" /> <label for="opt_left">Left</label></li>
+        <li><input type="checkbox" id="opt_up" name="opt_up" value="2" /> <label for="opt_up">Up</label></li>
+        <li><input type="checkbox" id="opt_down" name="opt_down" value="3" /> <label for="opt_down">Down</label></li>
+        <li><input type="checkbox" id="opt_diagonal" name="opt_diagonal" value="4" /> <label for="opt_diagonal">Diagonal</label></li>
     </ul>
 
     <div>
+        <label for="algo">Search Algorithm:</label>
         <input name="algo" type="radio" id="ltr" value="ltr" checked>
-        <label for="ltr">LTR</label>
+        <label for="ltr">LTR (left-to-right)</label>
         <input name="algo" type="radio" id="longest" value="longest">
-        <label for="longest">LONGEST</label>
+        <label for="longest">Longest Run</label>
     </div>
-    <div id="output">...</div>
-    <button onClick="copy()" title="copy code">📋</button>
+
+    <div class="out-wrapper">
+        <div id="output">...</div>
+        <button onClick="copy()" title="copy code">📋</button>
+    </div>
     <div id="debugOut"></div>
 </div>
 <script>
