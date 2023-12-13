@@ -7,13 +7,26 @@
     <title>WH Cypher Generator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <script src="wasm_exec.js"></script>
+    <!-- Cache Loader JS -->
     <script>
+		if ("serviceWorker" in navigator) {
+			window.addEventListener("load", () => {
+				navigator.serviceWorker && navigator.serviceWorker.register("./sw.js");
+			});
+		}
+	</script>
+
+    <!-- WASM Loader JS -->
+    <script src="wasm_exec.js"></script>
+
+    <!-- WASM Initialize JS -->
+    <script defer>
         const go = new Go();
         WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
             go.run(result.instance);
         });
     </script>
+
     <style>
         html {
             font-family: Arial, serif;
