@@ -1,7 +1,7 @@
 package whcypher
 
 import (
-	"fmt"
+	"errors"
 	"math/rand"
 	"strings"
 )
@@ -131,7 +131,7 @@ func (t *Trie) InsertPagePart(dir Direction, page, rowNum, colStart int, letters
 	for i, l := range strings.ToLower(letters) {
 		index := l - 'a' // 99 - lower ascii table decimal number
 		if index < 0 || index > 25 {
-			return fmt.Errorf("invalid characters in source: %q", l)
+			return errors.New("invalid characters in source: " + string(l))
 		}
 		if current.Children[index] == nil {
 			current.Children[index] = NewNode()
@@ -173,7 +173,7 @@ func (t *Trie) SearchLetters(term string, direction Direction) (int, [][5]int) {
 // letters it can until the phrase is complete.
 func (t *Trie) ConstructPhraseLTR(phrase string, dir Direction) ([][5]int, error) {
 	if len(phrase) == 0 {
-		return nil, fmt.Errorf("invalid phrase %q", phrase)
+		return nil, errors.New("invalid phrase: " + phrase)
 	}
 
 	phraseLocations := [][5]int{}
@@ -187,7 +187,7 @@ func (t *Trie) ConstructPhraseLTR(phrase string, dir Direction) ([][5]int, error
 		index, locations := t.SearchLetters(remaining, dir)
 
 		if index < 1 || len(locations) < 1 {
-			return nil, fmt.Errorf("letter %s not found", string(remaining[index]))
+			return nil, errors.New("letter not found: " + string(remaining[index]))
 		}
 		ri := min(t.locSelect(len(locations)), len(locations)-1)
 		phraseLocations = append(phraseLocations, locations[ri])
@@ -204,12 +204,12 @@ func (t *Trie) ConstructPhraseLongest(phrase string, dir Direction) ([][5]int, e
 
 func (t *Trie) findAllLongest(phrase string, dir Direction) (res [][5]int, err error) {
 	if len(phrase) == 0 {
-		return nil, fmt.Errorf("invalid phrase %q", phrase)
+		return nil, errors.New("invalid phrase: " + phrase)
 	}
 
 	li, ls, lloc := t.FindLongest(phrase, dir)
 	if len(lloc) == 0 {
-		return nil, fmt.Errorf("unable to complete phrase %q", phrase)
+		return nil, errors.New("unable to complete phrase: " + phrase)
 	}
 
 	ri := min(t.locSelect(len(lloc)), len(lloc)-1)
