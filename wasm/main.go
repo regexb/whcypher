@@ -4,13 +4,9 @@ package main
 
 import (
 	"bytes"
-	"crypto"
-	_ "crypto/sha512"
 	_ "embed"
-	"encoding/hex"
-	"fmt"
 	"regexp"
-	"strings"
+	"strconv"
 	"syscall/js"
 
 	"github.com/regexb/whcypher"
@@ -86,13 +82,6 @@ type cypherTree struct {
 	trie   *whcypher.Trie
 }
 
-func (c *cypherTree) hash(this js.Value, args []js.Value) any {
-	h := crypto.SHA512.New()
-	h.Write([]byte(args[0].String()))
-
-	return hex.EncodeToString(h.Sum(nil))
-}
-
 func (c *cypherTree) generate(this js.Value, args []js.Value) any {
 	if len(args) != 3 {
 		panic("bad args")
@@ -104,7 +93,7 @@ func (c *cypherTree) generate(this js.Value, args []js.Value) any {
 	algo := args[2].String()
 	direction := whcypher.Direction(args[1].Int())
 
-	fmt.Printf("Query: %q w/ algo (%s) and options (%s)\n", in, algo, direction)
+	println("Query ", in)
 
 	var rawCode [][5]int
 	if algo == "longest" {
@@ -133,24 +122,30 @@ func (c *cypherTree) generate(this js.Value, args []js.Value) any {
 }
 
 func rawToCode(rawCode [][5]int) string {
-	out := []string{}
-	for _, part := range rawCode {
-		out = append(out, fmt.Sprintf("%d %d %d %d", part[0]+3, part[1]+1, part[2]+1, part[3]))
+	outStr := ""
+	for i, part := range rawCode {
+		outStr += strconv.FormatInt(int64(part[0]+3), 10) + " "
+		outStr += strconv.FormatInt(int64(part[1]+1), 10) + " "
+		outStr += strconv.FormatInt(int64(part[2]+1), 10) + " "
+		outStr += strconv.FormatInt(int64(part[3]), 10)
+
+		if i != len(rawCode)-1 {
+			outStr += " "
+		}
 	}
-	return strings.Join(out, " ")
+	return outStr
 }
 
 func rawToDebugString(rawCode [][5]int) string {
-	out := &strings.Builder{}
-	for i, part := range rawCode {
-		fmt.Fprintf(out, "[%d %d %d %d (%s)]", part[0]+3, part[1]+1, part[2]+1, part[3], dirDebugMap[whcypher.Direction(part[4])])
-		if i == len(rawCode)-1 {
-			fmt.Fprintln(out)
-		} else {
-			fmt.Fprint(out, " ")
-		}
+	outStr := ""
+	for _, part := range rawCode {
+		outStr += "[" + strconv.FormatInt(int64(part[0]+3), 10) + " "
+		outStr += strconv.FormatInt(int64(part[1]+1), 10) + " "
+		outStr += strconv.FormatInt(int64(part[2]+1), 10) + " "
+		outStr += strconv.FormatInt(int64(part[3]), 10) + " "
+		outStr += dirDebugMap[whcypher.Direction(part[4])] + "]"
 	}
-	return out.String()
+	return outStr
 }
 
 func rawToJSMap(rawCode [][5]int) []any {
@@ -182,7 +177,7 @@ func main() {
 
 	// Read the file
 	source := loadSource()
-	fmt.Printf("loaded %d pages\n", len(source))
+	println("loaded pages: ", len(source))
 
 	cypherGenerator := &cypherTree{
 		trie:   cypherTreeFromSource(source),
