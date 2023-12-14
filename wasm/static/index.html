@@ -180,12 +180,14 @@
     longest.addEventListener('change', setOutput);
 
     // Initialize WASM
-    const go = new Go();
-    WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
-        go.run(result.instance);
+    (async () => {
+        const go = new Go();
+        const fetchPromise = fetch("main.wasm");
+        const { instance } = await WebAssembly.instantiateStreaming(fetchPromise, go.importObject);
+        go.run(instance);
         console.log("Loaded cypher binary")
         setOutput();
-    });
+    })()
 </script>
 </body>
 </html>
