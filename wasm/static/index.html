@@ -31,14 +31,6 @@
     <!-- WASM Loader JS -->
     <script src="wasm_exec.js"></script>
 
-    <!-- WASM Initialize JS -->
-    <script defer>
-        const go = new Go();
-        WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
-            go.run(result.instance);
-        });
-    </script>
-
     <style>
         html {
             font-family: Arial, serif;
@@ -110,12 +102,12 @@
     </div>
 
     <div class="out-wrapper">
-        <div id="output">...</div>
+        <div id="output">loading...</div>
         <button onClick="copy()" title="copy code">📋</button>
     </div>
     <div id="debugOut"></div>
 </div>
-<script>
+<script defer>
     var inputField = document.querySelector('#inputField');
     var output = document.querySelector('#output');
     var debugOut = document.querySelector('#debugOut');
@@ -186,6 +178,14 @@
     optDiagonal.addEventListener('change', setOutput);
     ltr.addEventListener('change', setOutput);
     longest.addEventListener('change', setOutput);
+
+    // Initialize WASM
+    const go = new Go();
+    WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
+        go.run(result.instance);
+        console.log("Loaded cypher binary")
+        setOutput();
+    });
 </script>
 </body>
 </html>
