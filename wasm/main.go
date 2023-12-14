@@ -15,6 +15,8 @@ import (
 //go:embed source.txt
 var sourceData []byte
 
+const maxSize = 7
+
 var (
 	nonAlphaRegex = regexp.MustCompile(`[^a-zA-Z]`)
 )
@@ -29,11 +31,14 @@ func loadSource() [][][]byte {
 }
 
 // rowFromSource returns the string of characters walking in the x and y direction
-func rowFromSource(source [][]byte, startX, startY, moveX, moveY int) []byte {
+func rowFromSource(source [][]byte, startX, startY, moveX, moveY, max int) []byte {
 	row := make([]byte, 0)
 	x, y := startX, startY
 
 	for x >= 0 && x < len(source) && y >= 0 && y < len(source[x]) {
+		if len(row) >= max {
+			return row
+		}
 		row = append(row, source[x][y])
 		x += moveX
 		y += moveY
@@ -47,28 +52,28 @@ func cypherTreeFromSource(source [][][]byte) *whcypher.Trie {
 	for pi, page := range source {
 		for ri, row := range page {
 			for bi := range row {
-				if err := trie.InsertPagePart(whcypher.DirectionRight, pi, ri, bi, string(rowFromSource(page, ri, bi, 0, 1))); err != nil {
+				if err := trie.InsertPagePart(whcypher.DirectionRight, pi, ri, bi, string(rowFromSource(page, ri, bi, 0, 1, maxSize))); err != nil {
 					panic(err)
 				}
-				if err := trie.InsertPagePart(whcypher.DirectionLeft, pi, ri, bi, string(rowFromSource(page, ri, bi, 0, -1))); err != nil {
+				if err := trie.InsertPagePart(whcypher.DirectionLeft, pi, ri, bi, string(rowFromSource(page, ri, bi, 0, -1, maxSize))); err != nil {
 					panic(err)
 				}
-				if err := trie.InsertPagePart(whcypher.DirectionUp, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 0))); err != nil {
+				if err := trie.InsertPagePart(whcypher.DirectionUp, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 0, maxSize))); err != nil {
 					panic(err)
 				}
-				if err := trie.InsertPagePart(whcypher.DirectionDown, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 0))); err != nil {
+				if err := trie.InsertPagePart(whcypher.DirectionDown, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 0, maxSize))); err != nil {
 					panic(err)
 				}
-				if err := trie.InsertPagePart(whcypher.DirectionRightDown, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 1))); err != nil {
+				if err := trie.InsertPagePart(whcypher.DirectionRightDown, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, 1, maxSize))); err != nil {
 					panic(err)
 				}
-				if err := trie.InsertPagePart(whcypher.DirectionLeftDown, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, -1))); err != nil {
+				if err := trie.InsertPagePart(whcypher.DirectionLeftDown, pi, ri, bi, string(rowFromSource(page, ri, bi, 1, -1, maxSize))); err != nil {
 					panic(err)
 				}
-				if err := trie.InsertPagePart(whcypher.DirectionRightUp, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 1))); err != nil {
+				if err := trie.InsertPagePart(whcypher.DirectionRightUp, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, 1, maxSize))); err != nil {
 					panic(err)
 				}
-				if err := trie.InsertPagePart(whcypher.DirectionLeftUp, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, -1))); err != nil {
+				if err := trie.InsertPagePart(whcypher.DirectionLeftUp, pi, ri, bi, string(rowFromSource(page, ri, bi, -1, -1, maxSize))); err != nil {
 					panic(err)
 				}
 			}
